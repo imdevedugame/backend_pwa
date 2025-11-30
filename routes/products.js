@@ -56,8 +56,14 @@ router.get('/', optionalAuth, async (req, res) => {
 // ===== GET product by ID =====
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
-    // increment view_count
-    await supabaseAdmin.rpc('increment_product_view', { product_id_input: Number(req.params.id) }).catch(() => {})
+    // increment view_count (abaikan error agar tidak blok detail produk)
+    const productIdNum = Number(req.params.id)
+    if (Number.isFinite(productIdNum)) {
+      const { error: viewErr } = await supabaseAdmin.rpc('increment_product_view', { product_id_input: productIdNum })
+      if (viewErr) {
+        console.warn('[PRODUCTS][VIEW_INCREMENT] RPC error:', viewErr.message)
+      }
+    }
     const { data, error } = await supabaseAdmin
       .from('products')
       .select('id,user_id,category_id,name,description,price,condition,images,location,stock,is_sold,view_count,users:users(id,name,phone,address,city,avatar,rating,total_reviews),categories:categories(name)')
